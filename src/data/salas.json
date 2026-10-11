@@ -1,0 +1,8 @@
+[
+  { "id": 1, "codigo": "S-101", "nombre": "Sala 101", "capacidad": 20, "equipamiento": ["proyector", "climatizacion"] },
+  { "id": 2, "codigo": "S-102", "nombre": "Sala 102", "capacidad": 30, "equipamiento": ["proyector"] },
+  { "id": 3, "codigo": "S-201", "nombre": "Sala 201", "capacidad": 15, "equipamiento": ["climatizacion"] },
+  { "id": 4, "codigo": "LAB-01", "nombre": "Laboratorio de Computación 1", "capacidad": 25, "equipamiento": ["proyector", "computadores", "climatizacion"] },
+  { "id": 5, "codigo": "LAB-02", "nombre": "Laboratorio de Computación 2", "capacidad": 18, "equipamiento": ["computadores"] },
+  { "id": 6, "codigo": "MUL-01", "nombre": "Espacio Multipropósito", "capacidad": 50, "equipamiento": ["proyector", "climatizacion"] }
+]

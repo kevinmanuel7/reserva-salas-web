@@ -1,0 +1,28 @@
+/* Colores de marca: se definen SOLO aquí (regla de diseño del proyecto) */
+:root {
+  --bs-primary: #1f4e79;
+  --bs-primary-rgb: 31, 78, 121;
+  --bs-link-color: #1f4e79;
+  --bs-link-color-rgb: 31, 78, 121;
+}
+
+.btn-primary {
+  --bs-btn-bg: #1f4e79;
+  --bs-btn-border-color: #1f4e79;
+  --bs-btn-hover-bg: #173b5c;
+  --bs-btn-hover-border-color: #173b5c;
+  --bs-btn-active-bg: #12304b;
+  --bs-btn-active-border-color: #12304b;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
