@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { obtenerSalas } from '../services/salasService';
 import { obtenerReservasPorFecha } from '../services/reservasService';
 import { hoyISO } from '../utils/fechas';
+import AgendaGrid from '../components/AgendaGrid';
+import { BLOQUES } from '../data/bloques';
 
 export default function Agenda() {
   // 1) Estado: los datos que, al cambiar, hacen que React vuelva a dibujar la página
@@ -32,10 +34,11 @@ export default function Agenda() {
         </div>
       </div>
 
-      {/* Texto temporal para comprobar que el estado funciona (se borra en el paso 2) */}
-      <p className="text-muted">
-        Salas: {salas.length} · Reservas del {fecha}: {reservas.length}
+      <p className="text-muted mb-3">
+        {reservas.length} reserva(s) para el {fecha}
       </p>
+
+      <AgendaGrid salas={salas} bloques={BLOQUES} reservas={reservas} />
     </main>
   );
 }
