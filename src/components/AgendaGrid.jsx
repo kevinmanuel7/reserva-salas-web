@@ -1,3 +1,5 @@
+import { reservaEnBloque } from '../utils/agenda';
+
 export default function AgendaGrid({ salas, bloques, reservas }) {
   // Caso borde: si no hay salas, se muestra un aviso en vez de una tabla vacía
   if (salas.length === 0) {
@@ -28,12 +30,22 @@ export default function AgendaGrid({ salas, bloques, reservas }) {
                 </small>
               </th>
 
-              {bloques.map((bloque) => (
-                <td key={bloque.inicio}>
-                  {/* En el paso 3 aquí se decide si está libre u ocupado usando "reservas" */}
-                  <span className="badge bg-success">Libre</span>
-                </td>
-              ))}
+              {bloques.map((bloque) => {
+                const reserva = reservaEnBloque(reservas, sala.id, bloque);
+                return (
+                  <td key={bloque.inicio}>
+                    {reserva ? (
+                      <>
+                        <span className="badge bg-danger">Ocupado</span>
+                        <div className="small mt-1">{reserva.actividad}</div>
+                        <div className="small text-muted">{reserva.relator}</div>
+                      </>
+                    ) : (
+                      <span className="badge bg-success">Libre</span>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
