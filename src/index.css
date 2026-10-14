@@ -173,3 +173,19 @@ body {
   border-color: var(--duoc-amarillo);
   box-shadow: 0 0 0 0.2rem rgba(255, 184, 0, 0.3);
 }
+/* Texto secundario dentro de encabezados de tabla, sin mayúsculas */
+.tabla-duoc .text-none {
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+
+.tabla-duoc > thead > tr > th {
+  min-width: 120px;
+}
+
+/* Campos de formulario siempre en blanco (el fondo de la página es gris) */
+.form-control,
+.form-select {
+  background-color: #fff;
+}

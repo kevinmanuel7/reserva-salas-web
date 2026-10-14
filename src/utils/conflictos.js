@@ -15,3 +15,21 @@ export const hayConflicto = (reservas, nueva) =>
       horaAMinutos(nueva.horaInicio) < horaAMinutos(r.horaFin) &&
       horaAMinutos(nueva.horaFin) > horaAMinutos(r.horaInicio)
   );
+
+// Los bloques del borrador no tienen "id" (usan "idTemporal").
+// Se les da un id propio para que hayConflicto pueda distinguirlos entre sí.
+const borradorComoReservas = (borrador) =>
+  borrador.map((b) => ({ ...b, id: `borrador-${b.idTemporal}` }));
+
+// ¿Se puede agregar "nuevo" sin chocar con reservas confirmadas ni con el borrador?
+export const bloqueDisponible = (reservas, borrador, nuevo) =>
+  !hayConflicto([...reservas, ...borradorComoReservas(borrador)], nuevo);
+
+// Devuelve los idTemporal de los bloques del borrador que chocan
+// con una reserva confirmada o con otro bloque del mismo borrador.
+export const bloquesConConflicto = (reservas, borrador) => {
+  const pendientes = borradorComoReservas(borrador);
+  return pendientes
+    .filter((b) => hayConflicto([...reservas, ...pendientes], b))
+    .map((b) => b.idTemporal);
+};

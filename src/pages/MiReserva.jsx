@@ -1,122 +1,173 @@
 // RESPONSABLE: Persona 1
-// TODO:
-//  - Listar obtenerBorrador() (el "carrito").
-//  - Por bloque: fecha, horario (BLOQUES) y actividad; validar con horarioValido / estaVacio.
-//  - Quitar con quitarBloque(); confirmar cada bloque con confirmarReserva() y luego vaciarBorrador().
-//  - Mostrar errores de cruce (confirmarReserva lanza Error) con alert alert-danger.
+// "Mi reserva": el carrito de bloques. Aquí se completa la actividad,
+// se quitan bloques y se confirman TODOS juntos (todo o nada).
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import EncabezadoPagina from '../components/EncabezadoPagina';
+import { obtenerBorrador, quitarBloque, vaciarBorrador, actualizarBloque } from '../services/borradorService';
+import { obtenerReservas, confirmarVarias } from '../services/reservasService';
+import { obtenerSalas } from '../services/salasService';
+import { bloquesConConflicto } from '../utils/conflictos';
+import { estaVacio } from '../utils/validaciones';
+import { formatearFecha, hoyISO } from '../utils/fechas';
 
-import { useState, useEffect } from 'react';
-import { obtenerBorrador, quitarBloque, vaciarBorrador } from '../services/borradorService';
-import { confirmarReserva } from '../services/reservasService';
+// Orden cronológico (sobre una copia, para no modificar el arreglo original)
+const ordenar = (lista) =>
+  [...lista].sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
 
 export default function MiReserva() {
-  const [bloques, setBloques] = useState([]);
-  const [mensaje, setMensaje] = useState(null);
-  const [error, setError] = useState(null);
+  const { usuario } = useAuth();
+  const [salas] = useState(() => obtenerSalas());
+  const [bloques, setBloques] = useState(() => ordenar(obtenerBorrador()));
+  const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState('');
+  const [intentoConfirmar, setIntentoConfirmar] = useState(false);
 
-  useEffect(() => {
-    cargarBorrador();
-  }, []);
+  const recargar = () => setBloques(ordenar(obtenerBorrador()));
+  const nombreSala = (bloque) =>
+    salas.find((s) => s.id === bloque.salaId)?.nombre ?? bloque.nombreSala ?? 'Sala';
 
-  const cargarBorrador = () => {
-    setBloques(obtenerBorrador());
+  // Se calculan en cada render a partir del estado (no necesitan su propio useState)
+  const idsConConflicto = bloquesConConflicto(obtenerReservas(), bloques);
+  const hoy = hoyISO();
+
+  const manejarActividad = (idTemporal, actividad) => {
+    actualizarBloque(idTemporal, { actividad });
+    setBloques((anteriores) =>
+      anteriores.map((b) => (b.idTemporal === idTemporal ? { ...b, actividad } : b))
+    );
   };
 
-  const manejarQuitar = (index) => {
-    quitarBloque(index);
-    cargarBorrador();
-    setMensaje('Bloque eliminado del borrador.');
-    setTimeout(() => setMensaje(null), 3000);
+  const manejarQuitar = (idTemporal) => {
+    quitarBloque(idTemporal);
+    recargar();
+    setError('');
+    setMensaje('Bloque quitado de tu reserva.');
   };
 
-  const manejarConfirmarTodo = () => {
-    setError(null);
+  const manejarVaciar = () => {
+    vaciarBorrador();
+    recargar();
+    setError('');
+    setMensaje('Se vació tu reserva.');
+  };
+
+  const manejarConfirmar = () => {
+    setMensaje('');
+    setIntentoConfirmar(true);
+
+    // 1) Validaciones del formulario
+    if (bloques.some((b) => estaVacio(b.actividad))) {
+      setError('Completa la actividad de todos los bloques antes de confirmar.');
+      return;
+    }
+    if (bloques.some((b) => b.fecha < hoy)) {
+      setError('Hay bloques con fecha pasada. Quítalos antes de confirmar.');
+      return;
+    }
+
+    // 2) Confirmación todo o nada (el service revisa los cruces de horario)
     try {
-      bloques.forEach((bloque) => {
-        confirmarReserva(bloque);
-      });
+      confirmarVarias(bloques.map((b) => ({ ...b, relator: b.relator || usuario.nombre })));
       vaciarBorrador();
-      cargarBorrador();
+      recargar();
+      setError('');
+      setIntentoConfirmar(false);
       setMensaje('¡Reservas confirmadas con éxito!');
-      setTimeout(() => setMensaje(null), 3000);
     } catch (err) {
-      setError(err.message || 'Error al confirmar las reservas por conflicto de horario.');
+      setError(err.message);
     }
   };
 
   return (
     <main className="container py-4">
-      <h1 className="h3 mb-4">Mi Reserva (Borrador)</h1>
+      <EncabezadoPagina
+        titulo="Mi reserva"
+        descripcion="Completa la actividad de cada bloque y confirma todo de una vez."
+      />
 
       {mensaje && (
-        <div className="alert alert-success" role="alert">
-          {mensaje}
+        <div className="alert alert-success alert-dismissible" role="alert">
+          {mensaje}{' '}
+          {mensaje.startsWith('¡Reservas') && (
+            <Link to="/mis-reservas" className="alert-link">Ver mis reservas</Link>
+          )}
+          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setMensaje('')} />
         </div>
       )}
 
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
 
-      {bloques.length > 0 ? (
-        <>
-          <div className="table-responsive mb-4">
-            <table className="table table-hover align-middle">
+      {bloques.length === 0 ? (
+        <div className="alert alert-info">
+          No tienes bloques en tu reserva. Agrégalos desde la{' '}
+          <Link to="/" className="alert-link">Agenda</Link> o el{' '}
+          <Link to="/salas" className="alert-link">catálogo de salas</Link>.
+        </div>
+      ) : (
+        <div className="card">
+          <div className="card-header">{bloques.length} bloque(s) por confirmar</div>
+          <div className="table-responsive">
+            <table className="table table-bordered tabla-duoc align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Sala</th>
-                  <th>Fecha</th>
-                  <th>Horario</th>
-                  <th>Actividad</th>
-                  <th className="text-end">Acciones</th>
+                  <th scope="col">Sala</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Horario</th>
+                  <th scope="col">Actividad</th>
+                  <th scope="col" className="text-center">Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {bloques.map((bloque, index) => (
-                  <tr key={index}>
-                    <td>{bloque.nombreSala}</td>
-                    <td>{bloque.fecha}</td>
-                    <td>{bloque.horaInicio} - {bloque.horaFin}</td>
-                    <td>{bloque.actividad}</td>
-                    <td className="text-end">
-                      <button
-                        type="button"
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => manejarQuitar(index)}
-                      >
-                        Quitar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {bloques.map((bloque) => {
+                  const choca = idsConConflicto.includes(bloque.idTemporal);
+                  const pasada = bloque.fecha < hoy;
+                  const sinActividad = intentoConfirmar && estaVacio(bloque.actividad);
+                  return (
+                    <tr key={bloque.idTemporal} className={choca || pasada ? 'table-danger' : ''}>
+                      <td className="fw-semibold">
+                        {nombreSala(bloque)}
+                        {choca && <div><span className="badge bg-danger">Choque de horario</span></div>}
+                        {pasada && <div><span className="badge bg-secondary">Fecha pasada</span></div>}
+                      </td>
+                      <td className="text-nowrap">{formatearFecha(bloque.fecha)}</td>
+                      <td className="text-nowrap">{bloque.horaInicio} – {bloque.horaFin}</td>
+                      <td style={{ minWidth: 200 }}>
+                        <input
+                          type="text"
+                          aria-label={`Actividad para ${nombreSala(bloque)} ${bloque.horaInicio}`}
+                          className={`form-control form-control-sm ${sinActividad ? 'is-invalid' : ''}`}
+                          value={bloque.actividad ?? ''}
+                          onChange={(e) => manejarActividad(bloque.idTemporal, e.target.value)}
+                          placeholder="Ej. Taller de Excel"
+                        />
+                        {sinActividad && <div className="invalid-feedback">Indica la actividad.</div>}
+                      </td>
+                      <td className="text-center">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => manejarQuitar(bloque.idTemporal)}
+                        >
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          <div className="d-flex justify-content-end gap-2">
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => {
-                vaciarBorrador();
-                cargarBorrador();
-              }}
-            >
-              Vaciar Borrador
+          <div className="card-body d-flex flex-wrap justify-content-end gap-2">
+            <button type="button" className="btn btn-outline-secondary" onClick={manejarVaciar}>
+              Vaciar reserva
             </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={manejarConfirmarTodo}
-            >
-              Confirmar Reservas
+            <button type="button" className="btn btn-warning" onClick={manejarConfirmar}>
+              Confirmar reservas
             </button>
           </div>
-        </>
-      ) : (
-        <p className="text-muted">No tienes bloques en borrador actualmente. Ve al catálogo de salas para agregar algunos.</p>
+        </div>
       )}
     </main>
   );
