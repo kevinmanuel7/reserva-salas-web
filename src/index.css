@@ -180,7 +180,8 @@ body {
   opacity: 0.8;
 }
 
-.tabla-duoc > thead > tr > th {
+/* En la agenda, columnas de sala con ancho mínimo para que se lean bien */
+.tabla-agenda > thead > tr > th {
   min-width: 120px;
 }
 

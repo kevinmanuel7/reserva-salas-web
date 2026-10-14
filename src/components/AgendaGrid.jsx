@@ -49,7 +49,7 @@ export default function AgendaGrid({ salas, bloques, reservas, borrador = [], on
 
   return (
     <div className="table-responsive">
-      <table className="table table-bordered tabla-duoc align-middle text-center mb-0">
+      <table className="table table-bordered tabla-duoc tabla-agenda align-middle text-center mb-0">
         <thead>
           <tr>
             <th scope="col" className="text-nowrap">Bloque</th>

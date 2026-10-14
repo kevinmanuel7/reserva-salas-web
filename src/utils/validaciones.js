@@ -20,3 +20,15 @@ export const validarBloque = ({ fecha, bloque, actividad }, hoy) => {
   if (estaVacio(actividad)) errores.actividad = 'Indica la actividad o curso.';
   return errores;
 };
+
+// Valida el formulario de una sala (Administración).
+// "codigosExistentes" son los códigos de las OTRAS salas, para no repetir.
+export const validarSala = ({ codigo, nombre, capacidad }, codigosExistentes = []) => {
+  const errores = {};
+  if (estaVacio(codigo)) errores.codigo = 'Ingresa el código de la sala.';
+  else if (codigosExistentes.some((c) => c.toUpperCase() === codigo.trim().toUpperCase()))
+    errores.codigo = 'Ya existe una sala con ese código.';
+  if (estaVacio(nombre)) errores.nombre = 'Ingresa el nombre de la sala.';
+  if (!esNumeroPositivo(capacidad)) errores.capacidad = 'La capacidad debe ser un número entero mayor a 0.';
+  return errores;
+};
