@@ -8,8 +8,8 @@ export default function AgendaGrid({ salas, bloques, reservas }) {
 
   return (
     <div className="table-responsive">
-      <table className="table table-bordered table-hover align-middle text-center">
-        <thead className="table-light">
+      <table className="table table-bordered tabla-duoc align-middle text-center mb-0">
+        <thead>
           <tr>
             <th scope="col" className="text-start">Sala</th>
             {bloques.map((bloque) => (

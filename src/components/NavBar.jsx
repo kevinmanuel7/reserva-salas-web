@@ -23,7 +23,7 @@ export default function NavBar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container">
-        <Link className="navbar-brand fw-semibold" to="/">THERIONLABS · Salas</Link>
+        <Link className="navbar-brand" to="/">THERIONLABS <span>· Salas</span></Link>
 
         {usuario && (
           <>
