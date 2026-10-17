@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 2
 // Tabla de la agenda de un día: filas = bloques horarios, columnas = salas.
 // No carga datos ni maneja estado: todo lo recibe por props desde la página Agenda.
 //

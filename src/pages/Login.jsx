@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 1
 // TODO: formulario con nombre + selector de rol, validación (estaVacio) y mensajes con is-invalid.
 // Lo de abajo es un acceso TEMPORAL para poder navegar mientras se construye la página.
 

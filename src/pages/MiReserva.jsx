@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 1
 // "Mi reserva": el carrito de bloques. Aquí se completa la actividad,
 // se quitan bloques y se confirman TODOS juntos (todo o nada).
 import { useState } from 'react';

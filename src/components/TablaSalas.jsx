@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 2
 // Tabla del catálogo de salas para el coordinador.
 // Props:
 //  - salas: catálogo

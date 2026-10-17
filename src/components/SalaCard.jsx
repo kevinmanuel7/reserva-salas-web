@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 1
 // Tarjeta de una sala con su formulario de reserva (fecha + bloque + actividad).
 // Valida los campos y le pasa los datos al padre con onAgregar.
 // onAgregar(sala, datos) devuelve un mensaje de error (string) o null si se agregó bien.

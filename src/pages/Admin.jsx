@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 2
 // Administración (solo coordinador): resumen de ocupación + CRUD del catálogo de salas.
 import { useState } from 'react';
 import EncabezadoPagina from '../components/EncabezadoPagina';

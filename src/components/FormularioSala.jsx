@@ -1,4 +1,3 @@
-// RESPONSABLE: Persona 2
 // Formulario para crear o editar una sala.
 // Props:
 //  - salaInicial: la sala a editar, o null para crear una nueva
