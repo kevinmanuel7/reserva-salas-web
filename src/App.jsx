@@ -20,7 +20,7 @@ export default function App() {
           <Route path="/salas" element={<RutaProtegida><Salas /></RutaProtegida>} />
           <Route path="/mi-reserva" element={<RutaProtegida><MiReserva /></RutaProtegida>} />
           <Route path="/mis-reservas" element={<RutaProtegida><MisReservas /></RutaProtegida>} />
-          <Route path="/admin" element={<RutaProtegida rol="coordinador"><Admin /></RutaProtegida>} />
+          <Route path="/admin" element={<RutaProtegida rol="COORDINADOR"><Admin /></RutaProtegida>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

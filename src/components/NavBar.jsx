@@ -38,7 +38,7 @@ export default function NavBar() {
                 <li className="nav-item"><NavLink className="nav-link" to="/" end>Agenda</NavLink></li>
                 <li className="nav-item"><NavLink className="nav-link" to="/salas">Salas</NavLink></li>
                 <li className="nav-item"><NavLink className="nav-link" to="/mis-reservas">Mis reservas</NavLink></li>
-                {usuario.rol === 'coordinador' && (
+                {usuario.rol === 'COORDINADOR' && (
                   <li className="nav-item"><NavLink className="nav-link" to="/admin">Administración</NavLink></li>
                 )}
               </ul>
