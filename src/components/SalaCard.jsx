@@ -44,7 +44,7 @@ export default function SalaCard({ sala, onAgregar }) {
       <div className="card h-100">
         <div className="card-header d-flex justify-content-between align-items-center">
           <span>{sala.nombre}</span>
-          <span className="badge bg-warning text-dark">{sala.codigo}</span>
+          <span className="badge chip-reservada">{sala.codigo}</span>
         </div>
 
         <div className="card-body d-flex flex-column">
@@ -54,7 +54,7 @@ export default function SalaCard({ sala, onAgregar }) {
 
           <div className="mb-3 d-flex flex-wrap gap-1">
             {sala.equipamiento.map((item) => (
-              <span key={item} className="badge rounded-pill text-bg-light border">
+              <span key={item} className="badge chip-equipo">
                 {NOMBRES_EQUIPAMIENTO[item] ?? item}
               </span>
             ))}

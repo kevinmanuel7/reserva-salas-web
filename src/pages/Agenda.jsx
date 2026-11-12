@@ -81,9 +81,9 @@ export default function Agenda() {
                 <div className="small text-muted">reserva(s) confirmada(s)</div>
               </div>
               <div className="d-flex flex-column gap-2 small">
-                <span><span className="badge bg-danger me-1">Ocupado</span> Reservado por otro relator o curso</span>
-                <span><span className="badge bg-warning text-dark me-1">En tu reserva</span> Agregado, falta confirmar</span>
-                <span><span className="badge bg-success me-1">Libre</span> Presiona «Reservar» para agregarlo</span>
+                <span><span className="badge chip-ocupado me-1">Ocupado</span> Reservado por otro relator o curso</span>
+                <span><span className="badge chip-seleccionado me-1">En tu reserva</span> Agregado, falta confirmar</span>
+                <span><span className="badge chip-libre me-1">Libre</span> Presiona «Reservar» para agregarlo</span>
               </div>
             </div>
           </div>

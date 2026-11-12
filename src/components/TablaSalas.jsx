@@ -36,7 +36,7 @@ export default function TablaSalas({ salas, reservasFuturas, idEditando, onEdita
                   <div className="d-flex flex-wrap gap-1">
                     {sala.equipamiento.length === 0 && <span className="text-muted small">—</span>}
                     {sala.equipamiento.map((item) => (
-                      <span key={item} className="badge rounded-pill text-bg-light border">
+                      <span key={item} className="badge chip-equipo">
                         {NOMBRES_EQUIPAMIENTO[item] ?? item}
                       </span>
                     ))}

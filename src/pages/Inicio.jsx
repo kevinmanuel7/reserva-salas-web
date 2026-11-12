@@ -17,9 +17,9 @@ export default function Inicio() {
   return (
     <main>
       {/* Portada */}
-      <section className="bg-primary text-white py-5 mb-4">
+      <section className="portada text-white py-5 mb-4">
         <div className="container">
-          <h1 className="display-6 fw-bold">Reserva de salas THERIONLABS</h1>
+          <h1 className="display-6 fw-bold text-white">Reserva de salas THERIONLABS</h1>
           <p className="lead mb-4">
             Consulta la disponibilidad y reserva salas para tus cursos y talleres en pocos pasos.
           </p>
@@ -57,7 +57,7 @@ export default function Inicio() {
                   <p className="mb-2 small text-muted">{sala.codigo} · Capacidad: {sala.capacidad} personas</p>
                   <div className="d-flex flex-wrap gap-1">
                     {sala.equipamiento.map((equipo) => (
-                      <span className="badge bg-light text-primary border" key={equipo}>
+                      <span className="badge chip-equipo" key={equipo}>
                         {NOMBRES_EQUIPAMIENTO[equipo]}
                       </span>
                     ))}

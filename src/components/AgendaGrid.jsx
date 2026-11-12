@@ -19,7 +19,7 @@ export default function AgendaGrid({ salas, bloques, reservas, borrador = [], on
     if (reserva) {
       return (
         <>
-          <span className="badge bg-danger">Ocupado</span>
+          <span className="badge chip-ocupado">Ocupado</span>
           <div className="small mt-1">{reserva.actividad}</div>
           <div className="small text-muted">{reserva.relator}</div>
         </>
@@ -27,14 +27,14 @@ export default function AgendaGrid({ salas, bloques, reservas, borrador = [], on
     }
 
     if (reservaEnBloque(borrador, sala.id, bloque)) {
-      return <span className="badge bg-warning text-dark">En tu reserva</span>;
+      return <span className="badge chip-seleccionado">En tu reserva</span>;
     }
 
     if (onSeleccionar) {
       return (
         <button
           type="button"
-          className="btn btn-sm btn-outline-success"
+          className="btn btn-sm btn-outline-primary"
           aria-label={`Reservar ${sala.nombre} de ${bloque.inicio} a ${bloque.fin}`}
           onClick={() => onSeleccionar(sala, bloque)}
         >
@@ -43,7 +43,7 @@ export default function AgendaGrid({ salas, bloques, reservas, borrador = [], on
       );
     }
 
-    return <span className="badge bg-success">Libre</span>;
+    return <span className="badge chip-libre">Libre</span>;
   };
 
   return (
