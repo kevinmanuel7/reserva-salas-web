@@ -101,7 +101,7 @@ export default function MiReserva() {
       {bloques.length === 0 ? (
         <div className="alert alert-info">
           No tienes bloques en tu reserva. Agrégalos desde la{' '}
-          <Link to="/" className="alert-link">Agenda</Link> o el{' '}
+          <Link to="/agenda" className="alert-link">Agenda</Link> o el{' '}
           <Link to="/salas" className="alert-link">catálogo de salas</Link>.
         </div>
       ) : (

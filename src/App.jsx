@@ -8,6 +8,7 @@ import MiReserva from './pages/MiReserva';
 import Agenda from './pages/Agenda';
 import MisReservas from './pages/MisReservas';
 import Admin from './pages/Admin';
+import Inicio from './pages/Inicio';
 
 export default function App() {
   return (
@@ -15,8 +16,9 @@ export default function App() {
       <NavBar />
       <div className="flex-grow-1">
         <Routes>
+          <Route path="/" element={<Inicio />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<RutaProtegida><Agenda /></RutaProtegida>} />
+          <Route path="/agenda" element={<RutaProtegida><Agenda /></RutaProtegida>} />
           <Route path="/salas" element={<RutaProtegida><Salas /></RutaProtegida>} />
           <Route path="/mi-reserva" element={<RutaProtegida><MiReserva /></RutaProtegida>} />
           <Route path="/mis-reservas" element={<RutaProtegida><MisReservas /></RutaProtegida>} />

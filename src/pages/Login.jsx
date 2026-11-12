@@ -28,7 +28,7 @@ export default function Login() {
     setErrorServidor('');
     try {
       await iniciarSesion(email.trim(), password);
-      navigate('/');
+      navigate('/agenda');
     } catch (error) {
       setErrorServidor(error.message);
     } finally {
