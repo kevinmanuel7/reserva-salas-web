@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import MiReserva from './MiReserva';
+import { iniciarSesionDePrueba } from '../test/sesionDePrueba';
 
 const renderizarMiReserva = () =>
   render(
@@ -22,7 +23,7 @@ const leer = (clave) => JSON.parse(localStorage.getItem(clave));
 
 describe('Página Mi reserva', () => {
   beforeEach(() => {
-    localStorage.setItem('usuario', JSON.stringify({ nombre: 'Bastián Veas', rol: 'relator' }));
+    iniciarSesionDePrueba('Bastián Veas');
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 13, 12, 0)); // "hoy" = 13-10-2026
   });

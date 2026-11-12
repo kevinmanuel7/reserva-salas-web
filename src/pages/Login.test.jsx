@@ -1,50 +1,63 @@
-// src/pages/Login.test.jsx
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { AuthProvider } from '../context/AuthContext';
 import Login from './Login';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+const renderizar = () => render(
+  <AuthProvider>
+    <BrowserRouter>
+      <Login />
+    </BrowserRouter>
+  </AuthProvider>
+);
+
+// Escribe email y contraseña y presiona "Ingresar".
+const enviarFormulario = (email, password) => {
+  fireEvent.change(screen.getByLabelText(/correo/i), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText(/contraseña/i), { target: { value: password } });
+  fireEvent.click(screen.getByRole('button', { name: /ingresar/i }));
+};
 
 describe('Página de Login', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.restoreAllMocks();
   });
 
-  test('muestra error si el campo nombre está vacío', () => {
-    render(
-      <AuthProvider>
-        <BrowserRouter>
-          <Login />
-        </BrowserRouter>
-      </AuthProvider>
-    );
+  test('con campos vacíos muestra los errores y no llama al servidor', () => {
+    const espiaFetch = vi.spyOn(globalThis, 'fetch');
+    renderizar();
 
-    const botonSubmit = screen.getByRole('button', { name: /ingresar/i });
-    fireEvent.click(botonSubmit);
+    fireEvent.click(screen.getByRole('button', { name: /ingresar/i }));
 
-    expect(screen.getByText(/ingresa tu nombre/i)).toBeInTheDocument();
+    expect(screen.getByText(/ingresa tu correo/i)).toBeInTheDocument();
+    expect(screen.getByText(/ingresa tu contraseña/i)).toBeInTheDocument();
+    expect(espiaFetch).not.toHaveBeenCalled();
   });
 
-  test('guarda el usuario en localStorage al iniciar sesión', () => {
-    const spySetItem = vi.spyOn(Storage.prototype, 'setItem');
+  test('con credenciales correctas guarda la sesión que responde el servidor', async () => {
+    const sesion = {
+      token: 'token-de-prueba',
+      usuario: { id: 3, nombre: 'Relator Ficticio Uno', email: 'relator1@duocuc.test', rol: 'RELATOR' },
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(sesion), { status: 200 }));
+    renderizar();
 
-    render(
-      <AuthProvider>
-        <BrowserRouter>
-          <Login />
-        </BrowserRouter>
-      </AuthProvider>
-    );
+    enviarFormulario('relator1@duocuc.test', 'clave-de-prueba');
 
-    const inputNombre = screen.getByPlaceholderText(/ej. bastián/i);
-    const botonSubmit = screen.getByRole('button', { name: /ingresar/i });
+    // Espera a que termine el login (es asíncrono) y revisa lo guardado.
+    await vi.waitFor(() => expect(JSON.parse(localStorage.getItem('sesion'))).toEqual(sesion));
+  });
 
-    fireEvent.change(inputNombre, { target: { value: 'Bastián Veas' } });
-    fireEvent.click(botonSubmit);
+  test('con credenciales incorrectas muestra el mensaje del servidor y no guarda sesión', async () => {
+    const error = { codigo: 'CREDENCIALES_INVALIDAS', mensaje: 'Correo o contraseña incorrectos' };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(error), { status: 401 }));
+    renderizar();
 
-    expect(spySetItem).toHaveBeenCalledWith(
-      'usuario',
-      JSON.stringify({ nombre: 'Bastián Veas', rol: 'relator' })
-    );
+    enviarFormulario('relator1@duocuc.test', 'incorrecta');
+
+    expect(await screen.findByText('Correo o contraseña incorrectos')).toBeInTheDocument();
+    expect(localStorage.getItem('sesion')).toBeNull();
   });
 });

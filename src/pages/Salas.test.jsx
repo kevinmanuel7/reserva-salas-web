@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import Salas from './Salas';
+import { iniciarSesionDePrueba } from '../test/sesionDePrueba';
 
 // MOCK del catálogo: dos salas conocidas para la prueba
 vi.mock('../services/salasService', () => ({
@@ -30,7 +31,7 @@ const abrirFormularioSalaA = () => {
 
 describe('Página de Salas', () => {
   beforeEach(() => {
-    localStorage.setItem('usuario', JSON.stringify({ nombre: 'Bastián Veas', rol: 'relator' }));
+    iniciarSesionDePrueba('Bastián Veas');
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 13, 12, 0)); // "hoy" = 13-10-2026
   });

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import MisReservas from './MisReservas';
+import { iniciarSesionDePrueba } from '../test/sesionDePrueba';
 
 // La página necesita el contexto de sesión (useAuth) y el router (Link),
 // así que en la prueba la envolvemos igual que en main.jsx
@@ -17,8 +18,7 @@ const renderizarPagina = () =>
 
 describe('Página Mis reservas', () => {
   beforeEach(() => {
-    // Preparamos localStorage: usuario logeado + reservas de dos relatores
-    localStorage.setItem('usuario', JSON.stringify({ nombre: 'Ana Pérez', rol: 'relator' }));
+    iniciarSesionDePrueba('Ana Pérez');
     localStorage.setItem('reservas', JSON.stringify([
       { id: 1, salaId: 1, fecha: '2026-10-14', horaInicio: '08:30', horaFin: '10:00', relator: 'Ana Pérez', actividad: 'Curso Excel' },
       { id: 2, salaId: 2, fecha: '2026-10-14', horaInicio: '10:15', horaFin: '11:45', relator: 'Otro Relator', actividad: 'Taller ajeno' },

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import Agenda from './Agenda';
 import { obtenerReservasPorFecha } from '../services/reservasService';
+import { iniciarSesionDePrueba } from '../test/sesionDePrueba';
 
 // MOCK: reemplazamos el service de reservas por una función falsa.
 // Así la prueba no depende de las reservas guardadas y controlamos qué "devuelve la base de datos".
@@ -25,7 +26,7 @@ describe('Página Agenda', () => {
   beforeEach(() => {
     obtenerReservasPorFecha.mockReset();
     obtenerReservasPorFecha.mockReturnValue([]);
-    localStorage.setItem('usuario', JSON.stringify({ nombre: 'Ana Pérez', rol: 'relator' }));
+    iniciarSesionDePrueba('Ana Pérez');
     // Fijamos "hoy" en una fecha conocida para que la prueba no dependa del día en que se ejecuta
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 13, 12, 0)); // 13-10-2026 (los meses parten en 0)
