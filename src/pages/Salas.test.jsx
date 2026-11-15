@@ -98,4 +98,15 @@ describe('Página de Salas', () => {
     expect(within(tarjeta).getByText(/ya está ocupado/)).toBeInTheDocument();
     expect(localStorage.getItem('reservas_borrador')).toBeNull();
   });
+
+    it('sin sesión muestra el catálogo e invita a iniciar sesión en vez de reservar', () => {
+    localStorage.removeItem('sesion');
+
+    renderizarSalas();
+
+    expect(screen.getByText('Sala A')).toBeInTheDocument();
+    expect(screen.getByText(/como visitante/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reservar esta sala' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Inicia sesión para reservar' })).toHaveLength(2);
+  });
 });

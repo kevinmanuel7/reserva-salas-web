@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SalaCard from '../components/SalaCard';
+import AvisoVisitante from '../components/AvisoVisitante';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { obtenerSalas } from '../services/salasService';
 import { obtenerReservas } from '../services/reservasService';
@@ -59,6 +60,9 @@ export default function Salas() {
         </div>
       )}
 
+      {/* Sin sesión: se ve el catálogo, pero no se puede reservar */}
+      {!usuario && <AvisoVisitante texto="Estás viendo el catálogo como visitante: puedes revisar las salas y su equipamiento." />}
+
       {/* Filtros */}
       <div className="card mb-4">
         <div className="card-header">Filtrar salas</div>
@@ -98,7 +102,7 @@ export default function Salas() {
       <div className="row g-3">
         {salasFiltradas.length > 0 ? (
           salasFiltradas.map((sala) => (
-            <SalaCard key={sala.id} sala={sala} onAgregar={manejarAgregar} />
+            <SalaCard key={sala.id} sala={sala} onAgregar={usuario ? manejarAgregar : undefined} />
           ))
         ) : (
           <div className="col-12">

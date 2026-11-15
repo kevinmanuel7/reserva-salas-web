@@ -18,8 +18,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/agenda" element={<RutaProtegida><Agenda /></RutaProtegida>} />
-          <Route path="/salas" element={<RutaProtegida><Salas /></RutaProtegida>} />
+          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/salas" element={<Salas />} />
           <Route path="/mi-reserva" element={<RutaProtegida><MiReserva /></RutaProtegida>} />
           <Route path="/mis-reservas" element={<RutaProtegida><MisReservas /></RutaProtegida>} />
           <Route path="/admin" element={<RutaProtegida rol="COORDINADOR"><Admin /></RutaProtegida>} />

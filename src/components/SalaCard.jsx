@@ -1,7 +1,9 @@
 // Tarjeta de una sala con su formulario de reserva (fecha + bloque + actividad).
 // Valida los campos y le pasa los datos al padre con onAgregar.
 // onAgregar(sala, datos) devuelve un mensaje de error (string) o null si se agregó bien.
+// Si no viene onAgregar (visitante sin sesión), en vez del formulario se invita a iniciar sesión.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BLOQUES, NOMBRES_EQUIPAMIENTO } from '../data/bloques';
 import { hoyISO } from '../utils/fechas';
 import { validarBloque } from '../utils/validaciones';
@@ -60,7 +62,11 @@ export default function SalaCard({ sala, onAgregar }) {
             ))}
           </div>
 
-          {!abierto ? (
+          {!onAgregar ? (
+            <Link className="btn btn-outline-primary mt-auto w-100" to="/login" state={{ desde: '/salas' }}>
+              Inicia sesión para reservar
+            </Link>
+          ) : !abierto ? (
             <button type="button" className="btn btn-primary mt-auto w-100" onClick={() => setAbierto(true)}>
               Reservar esta sala
             </button>

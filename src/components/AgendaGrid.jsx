@@ -5,9 +5,10 @@
 //  - salas, bloques, reservas: datos a mostrar (reservas ya filtradas por fecha)
 //  - borrador: bloques que el usuario ya agregó a "Mi reserva" para esa fecha
 //  - onSeleccionar(sala, bloque): si viene, los bloques libres muestran un botón "Reservar"
+//  - mostrarDetalle: si es false (visitante), los ocupados no muestran actividad ni relator
 import { reservaEnBloque } from '../utils/agenda';
 
-export default function AgendaGrid({ salas, bloques, reservas, borrador = [], onSeleccionar }) {
+export default function AgendaGrid({ salas, bloques, reservas, borrador = [], onSeleccionar, mostrarDetalle = true }) {
   // Caso borde: si no hay salas, se muestra un aviso en vez de una tabla vacía
   if (salas.length === 0) {
     return <div className="alert alert-info">No hay salas registradas.</div>;
@@ -20,8 +21,12 @@ export default function AgendaGrid({ salas, bloques, reservas, borrador = [], on
       return (
         <>
           <span className="badge chip-ocupado">Ocupado</span>
-          <div className="small mt-1">{reserva.actividad}</div>
-          <div className="small text-muted">{reserva.relator}</div>
+          {mostrarDetalle && (
+            <>
+              <div className="small mt-1">{reserva.actividad}</div>
+              <div className="small text-muted">{reserva.relator}</div>
+            </>
+          )}
         </>
       );
     }

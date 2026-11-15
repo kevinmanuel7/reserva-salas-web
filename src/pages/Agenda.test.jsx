@@ -77,4 +77,20 @@ describe('Página Agenda', () => {
     expect(screen.queryAllByRole('button', { name: /^Reservar/ })).toHaveLength(0);
     expect(screen.getByText(/fecha pasada/)).toBeInTheDocument();
   });
+
+    it('sin sesión muestra la ocupación sin detalles y no permite reservar', () => {
+    localStorage.removeItem('sesion');
+    obtenerReservasPorFecha.mockReturnValue([
+      { id: 1, salaId: 1, fecha: '2026-10-13', horaInicio: '08:00', horaFin: '09:00', relator: 'Otro Relator', actividad: 'Curso Excel' },
+    ]);
+
+    renderizarAgenda();
+
+    expect(screen.getByText(/como visitante/i)).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: /^Reservar/ })).toHaveLength(0);
+    const tabla = screen.getByRole('table');
+    expect(within(tabla).getByText('Ocupado')).toBeInTheDocument();
+    expect(within(tabla).queryByText('Curso Excel')).not.toBeInTheDocument();
+    expect(within(tabla).queryByText('Otro Relator')).not.toBeInTheDocument();
+  });
 });

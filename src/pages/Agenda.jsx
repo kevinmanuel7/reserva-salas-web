@@ -8,6 +8,7 @@ import { hoyISO, formatearFecha } from '../utils/fechas';
 import AgendaGrid from '../components/AgendaGrid';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { BLOQUES } from '../data/bloques';
+import AvisoVisitante from '../components/AvisoVisitante';
 
 export default function Agenda() {
   const { usuario } = useAuth();
@@ -98,6 +99,9 @@ export default function Agenda() {
         </div>
       )}
 
+            {/* Sin sesión: se ve la ocupación, pero no se puede reservar */}
+      {!usuario && <AvisoVisitante texto="Estás viendo la agenda como visitante: puedes revisar qué bloques están ocupados." />}
+
       {esFechaPasada && (
         <div className="alert alert-secondary">
           Estás viendo una fecha pasada: solo se muestra la ocupación, no se puede reservar.
@@ -109,7 +113,8 @@ export default function Agenda() {
         bloques={BLOQUES}
         reservas={reservas}
         borrador={borrador}
-        onSeleccionar={esFechaPasada ? undefined : manejarSeleccionar}
+        onSeleccionar={esFechaPasada || !usuario ? undefined : manejarSeleccionar}
+        mostrarDetalle={Boolean(usuario)}
       />
     </main>
   );

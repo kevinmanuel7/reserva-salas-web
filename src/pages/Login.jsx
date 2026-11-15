@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { estaVacio } from '../utils/validaciones';
 
@@ -12,6 +12,10 @@ export default function Login() {
 
   const { iniciarSesion } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Página a la que volver después del login (la que estaba viendo el visitante).
+  const destino = location.state?.desde ?? '/agenda';
 
   const manejarSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +32,7 @@ export default function Login() {
     setErrorServidor('');
     try {
       await iniciarSesion(email.trim(), password);
-      navigate('/agenda');
+      navigate(destino, { replace: true});
     } catch (error) {
       setErrorServidor(error.message);
     } finally {
