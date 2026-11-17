@@ -101,19 +101,23 @@ h1, h2, h3, h4, h5, h6 {
   --bs-btn-hover-border-color: #d32f2f;
 }
 
-/* ---------- Barra superior: negra con línea amarilla abajo ---------- */
-.navbar {
-  min-height: 64px;
-  border-bottom: 4px solid var(--duoc-amarillo);
-}
-
 .navbar .navbar-brand {
   font-weight: 800;
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .navbar .navbar-brand span {
   color: var(--duoc-amarillo);
+  border-left: 1px solid #cfcac6;
+  padding-left: 0.75rem;
+}
+
+/* Logo de Duoc UC: versión blanca oficial para fondos oscuros */
+.navbar .logo-duoc {
+  height: 30px;
 }
 
 .navbar-dark .nav-link {

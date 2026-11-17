@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { obtenerBorrador, EVENTO_BORRADOR } from '../services/borradorService';
+import logoDuoc from '../assets/logo-duoc-blanco.png';
 
 export default function NavBar() {
   const { usuario, cerrarSesion } = useAuth();
@@ -24,7 +25,10 @@ export default function NavBar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container">
-        <Link className="navbar-brand" to="/">THERIONLABS <span>· Salas</span></Link>
+            <Link className="navbar-brand" to="/">
+              <img src={logoDuoc} alt="Duoc UC" className="logo-duoc" />
+              <span>Salas</span>
+            </Link>
 
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
           data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false"
