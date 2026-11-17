@@ -1,30 +1,50 @@
-import { leer, guardar } from './storage';
-import salasIniciales from '../data/salas.json';
+// Salas: se leen y modifican en ms-salas (puerto 8082 en local).
+// La API describe el equipamiento con tres campos (tieneProyector, tieneComputadores,
+// tieneClimatizacion), pero las páginas trabajan con una lista: equipamiento: ['proyector', ...].
+// Este archivo hace la traducción en los dos sentidos, así las páginas no cambian.
+import { pedir, URL_SALAS } from './api';
 
-const CLAVE = 'salas';
+const URL = `${URL_SALAS}/api/v1/salas`;
 
-// La primera vez carga el catálogo desde salas.json
-export const obtenerSalas = () => {
-  const salas = leer(CLAVE, null);
-  if (salas) return salas;
-  guardar(CLAVE, salasIniciales);
-  return salasIniciales;
+// nombre en la web → campo en la API
+const CAMPOS_EQUIPAMIENTO = {
+  proyector: 'tieneProyector',
+  computadores: 'tieneComputadores',
+  climatizacion: 'tieneClimatizacion',
 };
 
-export const obtenerSalaPorId = (id) => obtenerSalas().find((s) => s.id === Number(id));
+// API → web: agrega la lista "equipamiento" a partir de los tres booleanos.
+export const aSalaWeb = (sala) => ({
+  ...sala,
+  equipamiento: Object.keys(CAMPOS_EQUIPAMIENTO).filter((equipo) => sala[CAMPOS_EQUIPAMIENTO[equipo]]),
+});
 
-export const crearSala = (datos) => {
-  const salas = obtenerSalas();
-  const sala = { ...datos, id: Date.now() };
-  guardar(CLAVE, [...salas, sala]);
-  return sala;
+// web → API: arma el cuerpo que piden POST y PUT /salas.
+export const aSalaApi = ({ codigo, nombre, tipo, capacidad, equipamiento, activa = true }) => ({
+  codigo,
+  nombre,
+  tipo,
+  capacidad,
+  tieneProyector: equipamiento.includes('proyector'),
+  tieneComputadores: equipamiento.includes('computadores'),
+  tieneClimatizacion: equipamiento.includes('climatizacion'),
+  activa,
+});
+
+// GET /salas (público): solo activas. Con incluirInactivas (solo coordinador), todas.
+export const obtenerSalas = async ({ incluirInactivas = false } = {}) => {
+  const salas = await pedir(incluirInactivas ? `${URL}?incluirInactivas=true` : URL);
+  return salas.map(aSalaWeb);
 };
 
-export const editarSala = (id, cambios) => {
-  const salas = obtenerSalas().map((s) => (s.id === id ? { ...s, ...cambios, id } : s));
-  guardar(CLAVE, salas);
-};
+// POST /salas (coordinador)
+export const crearSala = async (datos) =>
+  aSalaWeb(await pedir(URL, { metodo: 'POST', cuerpo: aSalaApi(datos) }));
 
-export const eliminarSala = (id) => {
-  guardar(CLAVE, obtenerSalas().filter((s) => s.id !== id));
-};
+// PUT /salas/{id} (coordinador). También sirve para reactivar (activa: true).
+export const editarSala = async (id, datos) =>
+  aSalaWeb(await pedir(`${URL}/${id}`, { metodo: 'PUT', cuerpo: aSalaApi(datos) }));
+
+// DELETE /salas/{id} (coordinador): baja lógica, la sala queda con activa: false.
+export const desactivarSala = async (id) =>
+  aSalaWeb(await pedir(`${URL}/${id}`, { metodo: 'DELETE' }));

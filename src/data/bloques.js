@@ -24,3 +24,10 @@ export const NOMBRES_EQUIPAMIENTO = {
   computadores: 'Computadores',
   climatizacion: 'Climatización',
 };
+
+// Tipos de sala del contrato (campo "tipo" de la API) y su nombre para mostrar
+export const TIPOS_SALA = {
+  SALA_CLASES: 'Sala de clases',
+  LABORATORIO: 'Laboratorio',
+  MULTIPROPOSITO: 'Multipropósito',
+};

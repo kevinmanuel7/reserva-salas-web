@@ -1,6 +1,6 @@
 // Tarjeta de una sala con su formulario de reserva (fecha + bloque + actividad).
 // Valida los campos y le pasa los datos al padre con onAgregar.
-// onAgregar(sala, datos) devuelve un mensaje de error (string) o null si se agregó bien.
+// onAgregar(sala, datos) es asíncrono: devuelve (await) un mensaje de error o null si se agregó bien.
 // Si no viene onAgregar (visitante sin sesión), en vez del formulario se invita a iniciar sesión.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -25,14 +25,14 @@ export default function SalaCard({ sala, onAgregar }) {
     setErrorGeneral('');
   };
 
-  const manejarSubmit = (e) => {
+  const manejarSubmit = async (e) => {
     e.preventDefault();
     const bloque = BLOQUES[indiceBloque];
     const nuevosErrores = validarBloque({ fecha, bloque, actividad }, hoyISO());
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
 
-    const error = onAgregar(sala, { fecha, bloque, actividad: actividad.trim() });
+    const error = await onAgregar(sala, { fecha, bloque, actividad: actividad.trim() });
     if (error) {
       setErrorGeneral(error);
       return;

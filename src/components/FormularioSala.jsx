@@ -5,10 +5,10 @@
 //  - onGuardar(datos): el padre guarda la sala
 //  - onCancelar(): el padre cierra el modo edición
 import { useState } from 'react';
-import { EQUIPAMIENTOS, NOMBRES_EQUIPAMIENTO } from '../data/bloques';
+import { EQUIPAMIENTOS, NOMBRES_EQUIPAMIENTO, TIPOS_SALA } from '../data/bloques';
 import { validarSala } from '../utils/validaciones';
 
-const VACIO = { codigo: '', nombre: '', capacidad: '', equipamiento: [] };
+const VACIO = { codigo: '', nombre: '', tipo: 'SALA_CLASES', capacidad: '', equipamiento: [] };
 
 export default function FormularioSala({ salaInicial, codigosExistentes, onGuardar, onCancelar }) {
   // Estado del formulario: parte con los datos de la sala a editar o vacío
@@ -18,7 +18,7 @@ export default function FormularioSala({ salaInicial, codigosExistentes, onGuard
   const [errores, setErrores] = useState({});
   const editando = Boolean(salaInicial);
 
-  // Un solo manejador para todos los inputs de texto, usando el atributo "name"
+  // Un solo manejador para todos los inputs de texto y el select, usando el atributo "name"
   const manejarCambio = (e) => {
     const { name, value } = e.target;
     setDatos((anteriores) => ({ ...anteriores, [name]: value }));
@@ -34,19 +34,21 @@ export default function FormularioSala({ salaInicial, codigosExistentes, onGuard
     }));
   };
 
-  const manejarSubmit = (e) => {
+  const manejarSubmit = async (e) => {
     e.preventDefault();
     const nuevosErrores = validarSala(datos, codigosExistentes);
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
 
-    onGuardar({
+    // El padre guarda en ms-salas. Devuelve true si se guardó bien.
+    const guardado = await onGuardar({
       codigo: datos.codigo.trim().toUpperCase(),
       nombre: datos.nombre.trim(),
+      tipo: datos.tipo,
       capacidad: Number(datos.capacidad),
       equipamiento: datos.equipamiento,
     });
-    if (!editando) setDatos(VACIO); // al crear, deja el formulario limpio para otra sala
+    if (guardado && !editando) setDatos(VACIO); // al crear, deja el formulario limpio para otra sala
   };
 
   const claseCampo = (campo) => `form-control ${errores[campo] ? 'is-invalid' : ''}`;
@@ -65,6 +67,15 @@ export default function FormularioSala({ salaInicial, codigosExistentes, onGuard
         <input id="nombre" name="nombre" type="text" className={claseCampo('nombre')}
           value={datos.nombre} onChange={manejarCambio} placeholder="Ej. Laboratorio de Redes" />
         {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="tipo" className="form-label">Tipo</label>
+        <select id="tipo" name="tipo" className="form-select" value={datos.tipo} onChange={manejarCambio}>
+          {Object.entries(TIPOS_SALA).map(([valor, texto]) => (
+            <option key={valor} value={valor}>{texto}</option>
+          ))}
+        </select>
       </div>
 
       <div className="mb-3">

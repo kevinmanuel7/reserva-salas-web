@@ -1,52 +1,78 @@
-// Administración (solo coordinador): resumen de ocupación + CRUD del catálogo de salas.
-import { useState } from 'react';
+// Administración (solo coordinador): resumen + CRUD del catálogo de salas contra ms-salas.
+import { useEffect, useState } from 'react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import FormularioSala from '../components/FormularioSala';
 import TablaSalas from '../components/TablaSalas';
-import { obtenerSalas, crearSala, editarSala, eliminarSala } from '../services/salasService';
-import { obtenerReservas } from '../services/reservasService';
+import { obtenerSalas, crearSala, editarSala, desactivarSala } from '../services/salasService';
+import { obtenerReservasPorFecha } from '../services/reservasService';
 import { hoyISO } from '../utils/fechas';
 
 export default function Admin() {
-  const [salas, setSalas] = useState(() => obtenerSalas());
-  const [reservas] = useState(() => obtenerReservas());
+  const [salas, setSalas] = useState([]);
+  const [reservasHoy, setReservasHoy] = useState(0);
   const [salaEditando, setSalaEditando] = useState(null); // null = modo "crear"
   const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState('');
+
+  // El coordinador ve TODAS las salas, también las inactivas (GET /salas?incluirInactivas=true)
+  const recargar = async () => setSalas(await obtenerSalas({ incluirInactivas: true }));
+
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        await recargar();
+        setReservasHoy((await obtenerReservasPorFecha(hoyISO())).length);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    cargar();
+  }, []);
 
   // Datos derivados: se calculan a partir del estado en cada render
-  const hoy = hoyISO();
-  const reservasHoy = reservas.filter((r) => r.fecha === hoy).length;
-  const futuras = reservas.filter((r) => r.fecha >= hoy);
-  const reservasFuturas = futuras.reduce((conteo, r) => {
-    conteo[r.salaId] = (conteo[r.salaId] ?? 0) + 1;
-    return conteo;
-  }, {});
-  const capacidadTotal = salas.reduce((total, s) => total + s.capacidad, 0);
+  const activas = salas.filter((s) => s.activa);
+  const capacidadTotal = activas.reduce((total, s) => total + s.capacidad, 0);
 
   // Códigos de las OTRAS salas (al editar, la sala no choca consigo misma)
   const codigosExistentes = salas.filter((s) => s.id !== salaEditando?.id).map((s) => s.codigo);
 
-  const recargar = () => setSalas(obtenerSalas());
-
-  const manejarGuardar = (datos) => {
-    if (salaEditando) {
-      editarSala(salaEditando.id, datos);
-      setMensaje(`Se actualizó la sala ${datos.codigo}.`);
-      setSalaEditando(null);
-    } else {
-      crearSala(datos);
-      setMensaje(`Se creó la sala ${datos.codigo}.`);
+  // Ejecuta una operación contra ms-salas, muestra el resultado y recarga la tabla.
+  // Devuelve true si salió bien (el formulario lo usa para limpiarse).
+  const operar = async (accion, textoExito) => {
+    setMensaje('');
+    setError('');
+    try {
+      await accion();
+      await recargar();
+      setMensaje(textoExito);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
     }
-    recargar();
   };
 
-  const manejarEliminar = (id) => {
-    const sala = salas.find((s) => s.id === id);
-    eliminarSala(id);
-    if (salaEditando?.id === id) setSalaEditando(null);
-    recargar();
-    setMensaje(`Se eliminó la sala ${sala.codigo}.`);
+  const manejarGuardar = async (datos) => {
+    if (salaEditando) {
+      // Se mantiene el estado activa/inactiva que tenía la sala
+      const guardado = await operar(
+        () => editarSala(salaEditando.id, { ...datos, activa: salaEditando.activa }),
+        `Se actualizó la sala ${datos.codigo}.`
+      );
+      if (guardado) setSalaEditando(null);
+      return guardado;
+    }
+    return operar(() => crearSala(datos), `Se creó la sala ${datos.codigo}.`);
   };
+
+  const manejarDesactivar = (id) => {
+    const sala = salas.find((s) => s.id === id);
+    if (salaEditando?.id === id) setSalaEditando(null);
+    return operar(() => desactivarSala(id), `Se desactivó la sala ${sala.codigo}.`);
+  };
+
+  const manejarReactivar = (sala) =>
+    operar(() => editarSala(sala.id, { ...sala, activa: true }), `Se reactivó la sala ${sala.codigo}.`);
 
   return (
     <main className="container py-4">
@@ -55,13 +81,13 @@ export default function Admin() {
         descripcion="Supervisa la ocupación y administra el catálogo de salas y laboratorios."
       />
 
-      {/* Resumen de ocupación */}
+      {/* Resumen */}
       <div className="row g-3 mb-4">
         {[
-          { valor: salas.length, texto: 'salas y laboratorios' },
+          { valor: activas.length, texto: 'salas activas' },
           { valor: capacidadTotal, texto: 'personas de capacidad total' },
           { valor: reservasHoy, texto: 'reservas para hoy' },
-          { valor: futuras.length, texto: 'reservas desde hoy en adelante' },
+          { valor: salas.length - activas.length, texto: 'salas inactivas' },
         ].map((dato) => (
           <div className="col-6 col-lg-3" key={dato.texto}>
             <div className="card h-100">
@@ -80,6 +106,8 @@ export default function Admin() {
           <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setMensaje('')} />
         </div>
       )}
+
+      {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="row g-3">
         {/* Formulario crear / editar */}
@@ -112,15 +140,15 @@ export default function Admin() {
             ) : (
               <TablaSalas
                 salas={salas}
-                reservasFuturas={reservasFuturas}
                 idEditando={salaEditando?.id}
                 onEditar={(sala) => { setSalaEditando(sala); setMensaje(''); }}
-                onEliminar={manejarEliminar}
+                onDesactivar={manejarDesactivar}
+                onReactivar={manejarReactivar}
               />
             )}
           </div>
           <p className="small text-muted mt-2">
-            Una sala con reservas próximas no se puede eliminar, para no dejar reservas sin sala.
+            Desactivar una sala no la borra: deja de aparecer para reservar, pero sus reservas pasadas se conservan.
           </p>
         </div>
       </div>

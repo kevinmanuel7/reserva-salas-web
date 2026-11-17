@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { obtenerSalas } from '../services/salasService';
-import { obtenerReservasPorFecha } from '../services/reservasService';
+import { obtenerReservasPorFecha, obtenerDisponibilidad } from '../services/reservasService';
 import { obtenerBorrador, agregarBloque } from '../services/borradorService';
 import { hoyISO, formatearFecha } from '../utils/fechas';
 import AgendaGrid from '../components/AgendaGrid';
@@ -15,16 +15,38 @@ export default function Agenda() {
 
   // Estado: fecha elegida, catálogo de salas, reservas del día y bloques en borrador
   const [fecha, setFecha] = useState(hoyISO());
-  const [salas] = useState(() => obtenerSalas());
+  const [salas, setSalas] = useState([]);
   const [reservas, setReservas] = useState([]);
   const [borrador, setBorrador] = useState([]);
   const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState('');
 
-  // Cada vez que cambia la fecha, se cargan las reservas y el borrador de ese día
+  // Las salas se piden una sola vez, al abrir la página
   useEffect(() => {
-    setReservas(obtenerReservasPorFecha(fecha));
+    const cargarSalas = async () => {
+      try {
+        setSalas(await obtenerSalas());
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    cargarSalas();
+  }, []);
+
+  // Cada vez que cambia la fecha, se cargan las reservas y el borrador de ese día.
+  // Con sesión: GET /reservas (trae relator y actividad).
+  // Sin sesión: GET /reservas/disponibilidad (solo qué bloques están ocupados).
+  useEffect(() => {
+    const cargarReservas = async () => {
+      try {
+        setReservas(usuario ? await obtenerReservasPorFecha(fecha) : await obtenerDisponibilidad(fecha));
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    cargarReservas();
     setBorrador(obtenerBorrador().filter((b) => b.fecha === fecha));
-  }, [fecha]);
+  }, [fecha, usuario]);
 
   // No se puede reservar en días que ya pasaron
   const esFechaPasada = fecha < hoyISO();
@@ -99,7 +121,9 @@ export default function Agenda() {
         </div>
       )}
 
-            {/* Sin sesión: se ve la ocupación, pero no se puede reservar */}
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      {/* Sin sesión: se ve la ocupación, pero no se puede reservar */}
       {!usuario && <AvisoVisitante texto="Estás viendo la agenda como visitante: puedes revisar qué bloques están ocupados." />}
 
       {esFechaPasada && (

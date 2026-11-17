@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SalaCard from '../components/SalaCard';
 import AvisoVisitante from '../components/AvisoVisitante';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { obtenerSalas } from '../services/salasService';
-import { obtenerReservas } from '../services/reservasService';
+import { obtenerDisponibilidad } from '../services/reservasService';
 import { obtenerBorrador, agregarBloque } from '../services/borradorService';
 import { bloqueDisponible } from '../utils/conflictos';
 import { formatearFecha } from '../utils/fechas';
@@ -13,14 +13,28 @@ import { EQUIPAMIENTOS, NOMBRES_EQUIPAMIENTO } from '../data/bloques';
 
 export default function Salas() {
   const { usuario } = useAuth();
-  const [salas] = useState(() => obtenerSalas());
+  const [salas, setSalas] = useState([]);
+  const [error, setError] = useState('');
   const [capacidadMinima, setCapacidadMinima] = useState('');
   const [equipamientoFiltro, setEquipamientoFiltro] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  // Al abrir la página se piden las salas activas a ms-salas
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        setSalas(await obtenerSalas());
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    cargar();
+  }, []);
+
   // Lo llama SalaCard (el hijo) con los datos ya validados del formulario.
   // Devuelve un mensaje de error si el bloque no está disponible, o null si se agregó.
-  const manejarAgregar = (sala, { fecha, bloque, actividad }) => {
+  // Revisa la ocupación real de esa sala y ese día en ms-reservas (GET /reservas/disponibilidad).
+  const manejarAgregar = async (sala, { fecha, bloque, actividad }) => {
     const nuevo = {
       salaId: sala.id,
       nombreSala: sala.nombre,
@@ -31,7 +45,14 @@ export default function Salas() {
       actividad,
     };
 
-    if (!bloqueDisponible(obtenerReservas(), obtenerBorrador(), nuevo)) {
+    let ocupados;
+    try {
+      ocupados = await obtenerDisponibilidad(fecha, sala.id);
+    } catch (err) {
+      return err.message;
+    }
+
+    if (!bloqueDisponible(ocupados, obtenerBorrador(), nuevo)) {
       return 'Ese bloque ya está ocupado o ya está en tu reserva. Elige otro horario.';
     }
 
@@ -59,6 +80,8 @@ export default function Salas() {
           <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setMensaje('')} />
         </div>
       )}
+
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Sin sesión: se ve el catálogo, pero no se puede reservar */}
       {!usuario && <AvisoVisitante texto="Estás viendo el catálogo como visitante: puedes revisar las salas y su equipamiento." />}

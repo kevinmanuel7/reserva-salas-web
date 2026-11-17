@@ -1,47 +1,49 @@
-import { leer, guardar } from './storage';
-import { hayConflicto, bloquesConConflicto } from '../utils/conflictos';
+// Reservas: se leen y crean en ms-reservas (puerto 8083 en local).
+// La API identifica el horario con números de bloque (bloqueInicio, bloqueFin: 1 a 13),
+// pero las páginas trabajan con horas (horaInicio "09:05", horaFin "10:00").
+// Este archivo traduce entre los dos usando la tabla BLOQUES, que es la misma de GET /bloques.
+import { pedir, URL_RESERVAS } from './api';
+import { BLOQUES } from '../data/bloques';
 
-const CLAVE = 'reservas';
+const URL = `${URL_RESERVAS}/api/v1/reservas`;
 
-export const obtenerReservas = () => leer(CLAVE);
-
-export const obtenerReservasPorRelator = (relator) =>
-  obtenerReservas().filter((r) => r.relator === relator);
-
-export const obtenerReservasPorFecha = (fecha) =>
-  obtenerReservas().filter((r) => r.fecha === fecha);
-
-// Deja solo los campos de una reserva (sin datos temporales del borrador)
-const limpiarReserva = ({ salaId, fecha, horaInicio, horaFin, relator, actividad }) => ({
-  salaId, fecha, horaInicio, horaFin, relator, actividad,
+// API → web: agrega horaInicio, horaFin y relator.
+export const aReservaWeb = (reserva) => ({
+  ...reserva,
+  relator: reserva.nombreRelator,
+  horaInicio: BLOQUES[reserva.bloqueInicio - 1].inicio,
+  horaFin: BLOQUES[reserva.bloqueFin - 1].fin,
 });
 
-const nuevoId = () => Date.now() + Math.floor(Math.random() * 100000);
+// web → API: convierte las horas en números de bloque (el bloque 1 es el índice 0).
+export const aReservaApi = ({ salaId, fecha, horaInicio, horaFin, actividad }) => ({
+  salaId,
+  fecha,
+  bloqueInicio: BLOQUES.findIndex((b) => b.inicio === horaInicio) + 1,
+  bloqueFin: BLOQUES.findIndex((b) => b.fin === horaFin) + 1,
+  actividad,
+});
 
-export const confirmarReserva = (nueva) => {
-  const reservas = obtenerReservas();
-  if (hayConflicto(reservas, nueva)) {
-    throw new Error('La sala ya está ocupada en ese horario');
-  }
-  const reserva = { ...limpiarReserva(nueva), id: nuevoId() };
-  guardar(CLAVE, [...reservas, reserva]);
-  return reserva;
+// GET /reservas?fecha= (con sesión): reservas del día con relator y actividad.
+export const obtenerReservasPorFecha = async (fecha) =>
+  (await pedir(`${URL}?fecha=${fecha}`)).map(aReservaWeb);
+
+// GET /reservas/disponibilidad?fecha= (público): solo qué bloques están ocupados.
+// Se puede filtrar por sala. Esta respuesta no trae "id" (para no exponer datos), así que
+// se le da uno propio: la revisión de choques (utils/conflictos) distingue las reservas por id.
+export const obtenerDisponibilidad = async (fecha, salaId) => {
+  const filtroSala = salaId ? `&salaId=${salaId}` : '';
+  const ocupados = await pedir(`${URL}/disponibilidad?fecha=${fecha}${filtroSala}`);
+  return ocupados.map((o, i) => aReservaWeb({ ...o, id: `ocupado-${i}` }));
 };
 
-// Confirma varios bloques de una vez: TODO O NADA.
-// Primero revisa que ninguno choque (con reservas existentes ni entre ellos)
-// y recién ahí guarda todos juntos. Si alguno choca, no se guarda ninguno.
-export const confirmarVarias = (bloques) => {
-  const reservas = obtenerReservas();
-  if (bloquesConConflicto(reservas, bloques).length > 0) {
-    throw new Error('Hay bloques que chocan con otras reservas. Revisa los marcados en rojo.');
-  }
-  const base = nuevoId();
-  const nuevas = bloques.map((b, i) => ({ ...limpiarReserva(b), id: base + i }));
-  guardar(CLAVE, [...reservas, ...nuevas]);
-  return nuevas;
-};
+// GET /reservas/mias: reservas activas del usuario del token.
+export const obtenerMisReservas = async () => (await pedir(`${URL}/mias`)).map(aReservaWeb);
 
-export const cancelarReserva = (id) => {
-  guardar(CLAVE, obtenerReservas().filter((r) => r.id !== id));
-};
+// POST /reservas/lote: confirma varias reservas, TODO O NADA (lo garantiza el backend).
+export const confirmarVarias = async (bloques) =>
+  (await pedir(`${URL}/lote`, { metodo: 'POST', cuerpo: bloques.map(aReservaApi) })).map(aReservaWeb);
+
+// PUT /reservas/{id}/cancelar: la reserva queda en estado CANCELADA.
+export const cancelarReserva = async (id) =>
+  aReservaWeb(await pedir(`${URL}/${id}/cancelar`, { metodo: 'PUT' }));

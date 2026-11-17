@@ -15,23 +15,24 @@ describe('FormularioSala', () => {
     expect(onGuardar).not.toHaveBeenCalled();
   });
 
-  it('con datos válidos entrega la sala normalizada al padre', () => {
-    const onGuardar = vi.fn();
+  it('con datos válidos entrega la sala normalizada al padre, con su tipo', () => {
+    const onGuardar = vi.fn().mockResolvedValue(true);
     render(<FormularioSala salaInicial={null} codigosExistentes={[]} onGuardar={onGuardar} />);
 
     fireEvent.change(screen.getByLabelText('Código'), { target: { value: ' lab-03 ' } });
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Laboratorio de Redes' } });
+    fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'LABORATORIO' } });
     fireEvent.change(screen.getByLabelText('Capacidad (personas)'), { target: { value: '22' } });
     fireEvent.click(screen.getByLabelText('Proyector'));
     fireEvent.click(screen.getByRole('button', { name: 'Crear sala' }));
 
     expect(onGuardar).toHaveBeenCalledWith({
-      codigo: 'LAB-03', nombre: 'Laboratorio de Redes', capacidad: 22, equipamiento: ['proyector'],
+      codigo: 'LAB-03', nombre: 'Laboratorio de Redes', tipo: 'LABORATORIO', capacidad: 22, equipamiento: ['proyector'],
     });
   });
 
   it('en modo edición parte con los datos de la sala', () => {
-    const sala = { id: 1, codigo: 'S-101', nombre: 'Sala 101', capacidad: 20, equipamiento: ['climatizacion'] };
+    const sala = { id: 1, codigo: 'S-101', nombre: 'Sala 101', tipo: 'SALA_CLASES', capacidad: 20, equipamiento: ['climatizacion'] };
     render(<FormularioSala salaInicial={sala} codigosExistentes={[]} onGuardar={() => {}} onCancelar={() => {}} />);
 
     expect(screen.getByLabelText('Nombre')).toHaveValue('Sala 101');

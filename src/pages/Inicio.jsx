@@ -1,4 +1,5 @@
 // Portada pública: se ve sin iniciar sesión. Presenta el sistema y las salas disponibles.
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { obtenerSalas } from '../services/salasService';
@@ -12,7 +13,20 @@ const PASOS = [
 
 export default function Inicio() {
   const { usuario } = useAuth();
-  const salas = obtenerSalas();
+  const [salas, setSalas] = useState([]);
+  const [error, setError] = useState('');
+
+  // Al abrir la página se piden las salas a ms-salas (GET /salas es público)
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        setSalas(await obtenerSalas());
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    cargar();
+  }, []);
 
   return (
     <main>
@@ -48,6 +62,7 @@ export default function Inicio() {
 
         {/* Salas disponibles */}
         <h2 className="h4 mb-3">Salas disponibles</h2>
+        {error && <div className="alert alert-danger">{error}</div>}
         <div className="row g-3">
           {salas.map((sala) => (
             <div className="col-12 col-sm-6 col-lg-4" key={sala.id}>

@@ -1,11 +1,10 @@
 // "Mi reserva": el carrito de bloques. Aquí se completa la actividad,
 // se quitan bloques y se confirman TODOS juntos (todo o nada).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { obtenerBorrador, quitarBloque, vaciarBorrador, actualizarBloque } from '../services/borradorService';
-import { obtenerReservas, confirmarVarias } from '../services/reservasService';
+import { confirmarVarias } from '../services/reservasService';
 import { obtenerSalas } from '../services/salasService';
 import { bloquesConConflicto } from '../utils/conflictos';
 import { estaVacio } from '../utils/validaciones';
@@ -16,19 +15,26 @@ const ordenar = (lista) =>
   [...lista].sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
 
 export default function MiReserva() {
-  const { usuario } = useAuth();
-  const [salas] = useState(() => obtenerSalas());
+  const [salas, setSalas] = useState([]);
   const [bloques, setBloques] = useState(() => ordenar(obtenerBorrador()));
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
   const [intentoConfirmar, setIntentoConfirmar] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
+  // Nombres de las salas (si falla, se usa el nombre guardado en el bloque)
+  useEffect(() => {
+    obtenerSalas().then(setSalas).catch(() => {});
+  }, []);
 
   const recargar = () => setBloques(ordenar(obtenerBorrador()));
   const nombreSala = (bloque) =>
     salas.find((s) => s.id === bloque.salaId)?.nombre ?? bloque.nombreSala ?? 'Sala';
 
-  // Se calculan en cada render a partir del estado (no necesitan su propio useState)
-  const idsConConflicto = bloquesConConflicto(obtenerReservas(), bloques);
+  // Se calculan en cada render a partir del estado (no necesitan su propio useState).
+  // Aquí solo se marcan los bloques que chocan ENTRE SÍ dentro del borrador;
+  // los choques con reservas de otras personas los detecta ms-reservas al confirmar (409).
+  const idsConConflicto = bloquesConConflicto([], bloques);
   const hoy = hoyISO();
 
   const manejarActividad = (idTemporal, actividad) => {
@@ -52,7 +58,7 @@ export default function MiReserva() {
     setMensaje('Se vació tu reserva.');
   };
 
-  const manejarConfirmar = () => {
+  const manejarConfirmar = async () => {
     setMensaje('');
     setIntentoConfirmar(true);
 
@@ -66,9 +72,17 @@ export default function MiReserva() {
       return;
     }
 
-    // 2) Confirmación todo o nada (el service revisa los cruces de horario)
+    if (idsConConflicto.length > 0) {
+      setError('Hay bloques de tu reserva que chocan entre sí. Quita uno de los marcados en rojo.');
+      return;
+    }
+
+    // 2) Confirmación todo o nada: POST /reservas/lote. Si un bloque choca con otra
+    //    reserva, ms-reservas responde 409 con un mensaje que dice cuál ("Reserva 2 de 3: ...")
+    //    y no guarda ninguno, así que el borrador se mantiene para corregirlo.
+    setConfirmando(true);
     try {
-      confirmarVarias(bloques.map((b) => ({ ...b, relator: b.relator || usuario.nombre })));
+      await confirmarVarias(bloques);
       vaciarBorrador();
       recargar();
       setError('');
@@ -76,6 +90,8 @@ export default function MiReserva() {
       setMensaje('¡Reservas confirmadas con éxito!');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setConfirmando(false);
     }
   };
 
@@ -162,8 +178,8 @@ export default function MiReserva() {
             <button type="button" className="btn btn-outline-secondary" onClick={manejarVaciar}>
               Vaciar reserva
             </button>
-            <button type="button" className="btn btn-warning" onClick={manejarConfirmar}>
-              Confirmar reservas
+            <button type="button" className="btn btn-warning" onClick={manejarConfirmar} disabled={confirmando}>
+              {confirmando ? 'Confirmando…' : 'Confirmar reservas'}
             </button>
           </div>
         </div>

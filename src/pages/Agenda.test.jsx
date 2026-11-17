@@ -3,13 +3,19 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import Agenda from './Agenda';
-import { obtenerReservasPorFecha } from '../services/reservasService';
+import { obtenerReservasPorFecha, obtenerDisponibilidad } from '../services/reservasService';
 import { iniciarSesionDePrueba } from '../test/sesionDePrueba';
 
-// MOCK: reemplazamos el service de reservas por una función falsa.
-// Así la prueba no depende de las reservas guardadas y controlamos qué "devuelve la base de datos".
+// MOCK: reemplazamos los services por funciones falsas.
+// Así la prueba no depende de ms-salas ni de ms-reservas y controlamos qué "responden".
+vi.mock('../services/salasService', () => ({
+  obtenerSalas: vi.fn().mockResolvedValue([
+    { id: 1, codigo: 'S-101', nombre: 'Sala 101', capacidad: 20, equipamiento: [] },
+  ]),
+}));
 vi.mock('../services/reservasService', () => ({
   obtenerReservasPorFecha: vi.fn(),
+  obtenerDisponibilidad: vi.fn(),
 }));
 
 // La página usa useAuth (sesión) y Link (router): se envuelve igual que en main.jsx
@@ -22,10 +28,15 @@ const renderizarAgenda = () =>
     </MemoryRouter>
   );
 
+const RESERVA_14 = {
+  id: 1, salaId: 1, fecha: '2026-10-14', horaInicio: '08:00', horaFin: '09:00', relator: 'Otro Relator', actividad: 'Curso Excel',
+};
+
 describe('Página Agenda', () => {
   beforeEach(() => {
-    obtenerReservasPorFecha.mockReset();
-    obtenerReservasPorFecha.mockReturnValue([]);
+    vi.clearAllMocks();
+    obtenerReservasPorFecha.mockResolvedValue([]);
+    obtenerDisponibilidad.mockResolvedValue([]);
     iniciarSesionDePrueba('Ana Pérez');
     // Fijamos "hoy" en una fecha conocida para que la prueba no dependa del día en que se ejecuta
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -36,30 +47,26 @@ describe('Página Agenda', () => {
     vi.useRealTimers();
   });
 
-  it('al cambiar la fecha, pide las reservas de ese día y las muestra', () => {
-    obtenerReservasPorFecha.mockImplementation((fecha) =>
-      fecha === '2026-10-14'
-        ? [{ id: 1, salaId: 1, fecha, horaInicio: '08:00', horaFin: '09:00', relator: 'Otro Relator', actividad: 'Curso Excel' }]
-        : []
-    );
-
+  it('al cambiar la fecha, pide las reservas de ese día (GET /reservas) y las muestra', async () => {
+    obtenerReservasPorFecha.mockImplementation(async (fecha) => (fecha === '2026-10-14' ? [RESERVA_14] : []));
     renderizarAgenda();
+    await screen.findByText('Sala 101');
 
     // Buscamos solo DENTRO de la tabla (la leyenda de arriba también dice "Ocupado")
-    const tabla = screen.getByRole('table');
-    expect(within(tabla).queryByText('Ocupado')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText('Ocupado')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-10-14' } });
 
-    expect(obtenerReservasPorFecha).toHaveBeenLastCalledWith('2026-10-14');
-    expect(within(tabla).getByText('Ocupado')).toBeInTheDocument();
+    const tabla = screen.getByRole('table');
+    expect(await within(tabla).findByText('Ocupado')).toBeInTheDocument();
     expect(within(tabla).getByText('Curso Excel')).toBeInTheDocument();
+    expect(obtenerReservasPorFecha).toHaveBeenLastCalledWith('2026-10-14');
   });
 
-  it('al presionar "Reservar" agrega el bloque al borrador con el relator logeado', () => {
+  it('al presionar "Reservar" agrega el bloque al borrador con el relator logeado', async () => {
     renderizarAgenda();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reservar Sala 101 de 08:00 a 09:00' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Reservar Sala 101 de 08:00 a 09:00' }));
 
     const borrador = JSON.parse(localStorage.getItem('reservas_borrador'));
     expect(borrador).toHaveLength(1);
@@ -69,8 +76,9 @@ describe('Página Agenda', () => {
     expect(within(screen.getByRole('table')).getByText('En tu reserva')).toBeInTheDocument();
   });
 
-  it('en una fecha pasada no permite reservar', () => {
+  it('en una fecha pasada no permite reservar', async () => {
     renderizarAgenda();
+    await screen.findByText('Sala 101');
 
     fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-10-01' } });
 
@@ -78,19 +86,20 @@ describe('Página Agenda', () => {
     expect(screen.getByText(/fecha pasada/)).toBeInTheDocument();
   });
 
-    it('sin sesión muestra la ocupación sin detalles y no permite reservar', () => {
+  it('sin sesión usa /disponibilidad: muestra la ocupación sin detalles y no permite reservar', async () => {
     localStorage.removeItem('sesion');
-    obtenerReservasPorFecha.mockReturnValue([
-      { id: 1, salaId: 1, fecha: '2026-10-13', horaInicio: '08:00', horaFin: '09:00', relator: 'Otro Relator', actividad: 'Curso Excel' },
+    // /disponibilidad no trae relator ni actividad
+    obtenerDisponibilidad.mockResolvedValue([
+      { salaId: 1, fecha: '2026-10-13', horaInicio: '08:00', horaFin: '09:00' },
     ]);
 
     renderizarAgenda();
 
+    const tabla = await screen.findByRole('table');
+    expect(await within(tabla).findByText('Ocupado')).toBeInTheDocument();
+    expect(obtenerDisponibilidad).toHaveBeenCalledWith('2026-10-13');
+    expect(obtenerReservasPorFecha).not.toHaveBeenCalled();
     expect(screen.getByText(/como visitante/i)).toBeInTheDocument();
     expect(screen.queryAllByRole('button', { name: /^Reservar/ })).toHaveLength(0);
-    const tabla = screen.getByRole('table');
-    expect(within(tabla).getByText('Ocupado')).toBeInTheDocument();
-    expect(within(tabla).queryByText('Curso Excel')).not.toBeInTheDocument();
-    expect(within(tabla).queryByText('Otro Relator')).not.toBeInTheDocument();
   });
 });
